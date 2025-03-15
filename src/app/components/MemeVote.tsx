@@ -6,10 +6,13 @@ interface MemeState {
 	id: string;
 	url: string;
 	title: string;
+
 	votes: {
 		funny: number;
 		notFunny: number;
 	};
+	createdAt: number;
+	updatedAt: number;
 }
 
 export default function MemeVote() {
@@ -23,6 +26,29 @@ export default function MemeVote() {
 			const newMeme = await fetchRandomMeme();
 			setMeme(newMeme);
 			setVoted(false);
+
+			// Update frame metadata
+			if (typeof window !== 'undefined') {
+				const frameImage = document.querySelector(
+					'meta[property="fc:frame:image"]'
+				);
+				const ogImage = document.querySelector(
+					'meta[property="og:image"]'
+				);
+
+				if (frameImage) {
+					frameImage.setAttribute(
+						'content',
+						newMeme.url
+					);
+				}
+				if (ogImage) {
+					ogImage.setAttribute(
+						'content',
+						newMeme.url
+					);
+				}
+			}
 		} catch (error) {
 			console.error('Error loading meme:', error);
 		}

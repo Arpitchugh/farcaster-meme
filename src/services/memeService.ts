@@ -31,6 +31,8 @@ interface Meme {
 		funny: number;
 		notFunny: number;
 	};
+	createdAt: number; // Unix timestamp
+	updatedAt: number; // Unix timestamp
 }
 
 async function isImageAvailable(url: string): Promise<boolean> {
@@ -80,7 +82,7 @@ export async function fetchRandomMeme(): Promise<Meme> {
 	const memeDoc = await getDoc(memeRef);
 
 	if (!memeDoc.exists()) {
-		// Initialize new meme in Firebase
+		// Initialize new meme in Firebase with timestamp
 		await setDoc(memeRef, {
 			id: postId,
 			url: data!.url,
@@ -89,6 +91,7 @@ export async function fetchRandomMeme(): Promise<Meme> {
 				funny: 0,
 				notFunny: 0,
 			},
+			createdAt: Date.now(), // Add creation timestamp
 		});
 	}
 
@@ -99,6 +102,12 @@ export async function fetchRandomMeme(): Promise<Meme> {
 		votes: memeDoc.exists()
 			? memeDoc.data().votes
 			: { funny: 0, notFunny: 0 },
+		createdAt: memeDoc.exists()
+			? memeDoc.data().createdAt
+			: Date.now(),
+		updatedAt: memeDoc.exists()
+			? memeDoc.data().updatedAt
+			: Date.now(),
 	};
 }
 
@@ -113,6 +122,7 @@ export async function voteMeme(
 		const currentVotes = memeDoc.data().votes;
 		await updateDoc(memeRef, {
 			[`votes.${vote}`]: currentVotes[vote] + 1,
+			updatedAt: Date.now(), // Update the timestamp when voted
 		});
 	}
 }
@@ -123,4 +133,15 @@ export async function getTopMemes(): Promise<Meme[]> {
 	const querySnapshot = await getDocs(q);
 
 	return querySnapshot.docs.map(doc => doc.data() as Meme);
+}
+
+export async function getMeme(memeId: string): Promise<Meme> {
+	const memeRef = doc(db, 'memes', memeId);
+	const memeDoc = await getDoc(memeRef);
+
+	if (!memeDoc.exists()) {
+		throw new Error('Meme not found');
+	}
+
+	return memeDoc.data() as Meme;
 }
